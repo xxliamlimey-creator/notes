@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf9f4" id="themeColorMeta">
+  <meta name="description" content="A faithful, offline-first Apple Notes experience for Windows. Write, organize, pin, and find every thought.">
+  <meta name="application-name" content="Notes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Notes">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <title>Notes</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+  <script>
+    // Set the stored appearance before first paint to avoid a flash of the wrong theme.
+    (() => {
+      try {
+        const raw = localStorage.getItem("notes.pwa.state.v1");
+        const preference = raw ? JSON.parse(raw)?.preferences?.theme : "auto";
+        const dark =
+          preference === "dark" ||
+          ((!preference || preference === "auto") &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        const theme = dark ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch (_) {
+        // The app will apply the theme once it starts.
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-notes" viewBox="0 0 24 24">
+      <path d="M6.25 3.25h8.2L18.75 7.5v13.25H6.25z" />
+      <path d="M14.2 3.45V7.7h4.3" />
+      <path d="M8.6 11.1h7.2M8.6 14.1h7.2M8.6 17.1h4.4" />
+    </symbol>
+    <symbol id="i-note" viewBox="0 0 24 24">
+      <path d="M5.5 3.75h13v16.5h-13z" />
+      <path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5" />
+    </symbol>
+    <symbol id="i-folder-fill" viewBox="0 0 24 24">
+      <path d="M2.75 7.2c0-1.18.96-2.14 2.14-2.14h3.7c.57 0 1.12.23 1.52.64l1.3 1.31h7.7c1.18 0 2.14.96 2.14 2.14v7.66c0 1.18-.96 2.14-2.14 2.14H4.89a2.14 2.14 0 0 1-2.14-2.14z" fill="currentColor" stroke="none" />
+      <path d="M3.1 7.9c0-.55.45-1 1-1h4.3l1.55 1.6h9.95c.55 0 1 .45 1 1v7.35c0 .55-.45 1-1 1H4.1c-.55 0-1-.45-1-1z" fill="currentColor" stroke="none" opacity=".78" />
+    </symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24">
+      <path d="M3 7.6A2.1 2.1 0 0 1 5.1 5.5h3.65c.56 0 1.1.22 1.5.62l1.35 1.35h7.3A2.1 2.1 0 0 1 21 9.57v7.3a2.1 2.1 0 0 1-2.1 2.1H5.1A2.1 2.1 0 0 1 3 16.87z" />
+      <path d="M3.4 9.1h17.2" />
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M4.5 6.6h15M9.25 6.6V4.4h5.5v2.2M6.8 6.6l.85 13.1h8.7L17.2 6.6M10 10.1v6.2M14 10.1v6.2" />
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="10.75" cy="10.75" r="6.25" />
+      <path d="m15.4 15.4 4.35 4.35" />
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 4.8v14.4M4.8 12h14.4" />
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24">
+      <path d="m6.5 6.5 11 11M17.5 6.5l-11 11" />
+    </symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24">
+      <path d="m9 5 7 7-7 7" />
+    </symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24">
+      <path d="m15 5-7 7 7 7" />
+    </symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24">
+      <path d="m5 9 7 7 7-7" />
+    </symbol>
+    <symbol id="i-ellipsis" viewBox="0 0 24 24">
+      <circle cx="5.5" cy="12" r="1.35" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none" />
+      <circle cx="18.5" cy="12" r="1.35" fill="currentColor" stroke="none" />
+    </symbol>
+    <symbol id="i-sidebar" viewBox="0 0 24 24">
+      <rect x="3.25" y="4.25" width="17.5" height="15.5" rx="2.4" />
+      <path d="M9.25 4.75v14.5" />
+      <path d="M5.9 8h1.05M5.9 10.7h1.05" />
+    </symbol>
+    <symbol id="i-compose" viewBox="0 0 24 24">
+      <path d="M12 4.4H5.7a1.9 1.9 0 0 0-1.9 1.9v12a1.9 1.9 0 0 0 1.9 1.9h12a1.9 1.9 0 0 0 1.9-1.9v-6.2" />
+      <path d="m10.1 13.9.7-3.8 6.75-6.75a1.55 1.55 0 0 1 2.2 2.2l-6.75 6.75z" />
+    </symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24">
+      <path d="M8.15 3.5h7.7l-1.3 5.05 3.2 3.15v1.45H6.25V11.7l3.2-3.15z" />
+      <path d="M12 13.15v7.35" />
+    </symbol>
+    <symbol id="i-pin-filled" viewBox="0 0 24 24">
+      <path d="M8.15 3.5h7.7l-1.3 5.05 3.2 3.15v1.45H6.25V11.7l3.2-3.15z" fill="currentColor" />
+      <path d="M12 13.15v7.35" />
+    </symbol>
+    <symbol id="i-checklist" viewBox="0 0 24 24">
+      <rect x="3.4" y="4.1" width="6" height="6" rx="3" />
+      <path d="m5 7.1 1.05 1.05 1.9-2.15M12.5 7.1h8M12.5 12.2h8M12.5 17.3h8" />
+      <rect x="3.4" y="13.9" width="6" height="6" rx="3" />
+      <path d="m5 16.9 1.05 1.05 1.9-2.15" />
+    </symbol>
+    <symbol id="i-list-bullet" viewBox="0 0 24 24">
+      <circle cx="5.2" cy="6.6" r="1.25" fill="currentColor" stroke="none" />
+      <circle cx="5.2" cy="12" r="1.25" fill="currentColor" stroke="none" />
+      <circle cx="5.2" cy="17.4" r="1.25" fill="currentColor" stroke="none" />
+      <path d="M9.5 6.6h10M9.5 12h10M9.5 17.4h10" />
+    </symbol>
+    <symbol id="i-list-number" viewBox="0 0 24 24">
+      <path d="M5.1 5.2h1.15v4M4.3 9.2h2.75M4.4 13.1c.2-.55.65-.85 1.25-.85.7 0 1.2.43 1.2 1.05 0 .82-1.05 1.25-2.2 2.55h2.35M4.5 19.1c.22-.5.62-.75 1.2-.75.65 0 1.1.38 1.1.95 0 .52-.36.9-.95.9.68 0 1.1.36 1.1.88 0 .62-.47 1.02-1.2 1.02-.58 0-1-.22-1.25-.7" />
+      <path d="M10.3 6.7h9.8M10.3 12h9.8M10.3 17.3h9.8" />
+    </symbol>
+    <symbol id="i-list-dash" viewBox="0 0 24 24">
+      <path d="M4.1 7h3M4.1 12h3M4.1 17h3M10.2 7h9.7M10.2 12h9.7M10.2 17h9.7" />
+    </symbol>
+    <symbol id="i-bold" viewBox="0 0 24 24">
+      <path d="M7.2 4.75h5.35a4.05 4.05 0 0 1 0 8.1H7.2zM7.2 12.85h5.95a3.45 3.45 0 0 1 0 6.9H7.2z" />
+    </symbol>
+    <symbol id="i-italic" viewBox="0 0 24 24">
+      <path d="M10 4.75h8M6 19.25h8M14.1 4.75 9.9 19.25" />
+    </symbol>
+    <symbol id="i-underline" viewBox="0 0 24 24">
+      <path d="M7.1 4.8v6.5a4.9 4.9 0 0 0 9.8 0V4.8M5.5 20h13" />
+    </symbol>
+    <symbol id="i-strike" viewBox="0 0 24 24">
+      <path d="M7.1 8.1c0-2 1.9-3.4 4.7-3.4 2.6 0 4.2 1.1 4.7 2.85M15.9 15.6c0 2.05-1.9 3.4-4.8 3.4-2.8 0-4.55-1.15-5.1-3M4.2 12h15.6" />
+    </symbol>
+    <symbol id="i-share" viewBox="0 0 24 24">
+      <path d="M12 15.25V3.8M8.65 7.15 12 3.8l3.35 3.35" />
+      <path d="M8.4 10.1H5.7v9.3h12.6v-9.3h-2.7" />
+    </symbol>
+    <symbol id="i-move" viewBox="0 0 24 24">
+      <path d="M3 7.5a2 2 0 0 1 2-2h3.4l1.75 1.8h7.9a2 2 0 0 1 2 2v7.4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M9.2 12.35h6.15M13.1 10.1l2.25 2.25-2.25 2.25" />
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M12 3.5v11M7.8 10.5 12 14.7l4.2-4.2M4.25 16.75v2.3a1.5 1.5 0 0 0 1.5 1.5h12.5a1.5 1.5 0 0 0 1.5-1.5v-2.3" />
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4.1" />
+      <path d="M12 2.7v2.1M12 19.2v2.1M21.3 12h-2.1M4.8 12H2.7M18.55 5.45 17.05 6.95M6.95 17.05 5.45 18.55M18.55 18.55l-1.5-1.5M6.95 6.95l-1.5-1.5" />
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24">
+      <path d="M20.15 14.1A8.3 8.3 0 0 1 9.9 3.85 8.35 8.35 0 1 0 20.15 14.1Z" />
+    </symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24">
+      <rect x="3.25" y="4.35" width="17.5" height="12.1" rx="2" />
+      <path d="M8.4 20h7.2M12 16.6v3.2" />
+    </symbol>
+    <symbol id="i-more-circle" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.75" />
+      <circle cx="8.4" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15.6" cy="12" r="1" fill="currentColor" stroke="none" />
+    </symbol>
+    <symbol id="i-restore" viewBox="0 0 24 24">
+      <path d="M5.3 8.65A8.2 8.2 0 1 1 4.4 14" />
+      <path d="M4.9 3.9v5.2h5.2" />
+    </symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24">
+      <path d="m4.25 19.75.85-4.2L15.9 4.75a1.9 1.9 0 0 1 2.7 0l.65.65a1.9 1.9 0 0 1 0 2.7L8.45 18.9zM13.8 6.85l3.35 3.35" />
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="m5 12.5 4.4 4.4L19.2 6.5" />
+    </symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24">
+      <path d="M19.5 12h-15M10 5.5 3.5 12l6.5 6.5" />
+    </symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24">
+      <rect x="2.75" y="5.75" width="18.5" height="12.5" rx="2.2" />
+      <path d="M6.2 9.2h.2M9.2 9.2h.2M12.2 9.2h.2M15.2 9.2h.2M18.2 9.2h.2M6.2 12.1h.2M9.2 12.1h.2M12.2 12.1h.2M15.2 12.1h.2M18.2 12.1h.2M7.1 15h9.8" />
+    </symbol>
+    <symbol id="i-info" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.75" />
+      <path d="M12 10.8v5.4" />
+      <circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none" />
+    </symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24">
+      <path d="M7.1 18.3h9.85a3.55 3.55 0 0 0 .4-7.08 5.3 5.3 0 0 0-10.2-1.2A4.15 4.15 0 0 0 7.1 18.3Z" />
+      <path d="m9.25 13.65 1.9 1.9 3.9-3.9" />
+    </symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24">
+      <path d="M8 4.75v14.5M4.75 16 8 19.25 11.25 16M16 19.25V4.75M12.75 8 16 4.75 19.25 8" />
+    </symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="8.25" y="8.25" width="11.5" height="11.5" rx="2" />
+      <path d="M15.75 5.75v-1h-11.5v11.5h1" />
+    </symbol>
+    <symbol id="i-command" viewBox="0 0 24 24">
+      <path d="M9 9h6v6H9z" />
+      <path d="M9 9V7.2A2.2 2.2 0 1 0 6.8 9.4H9zM15 9V7.2a2.2 2.2 0 1 1 2.2 2.2H15zM9 15v1.8a2.2 2.2 0 1 1-2.2-2.2H9zM15 15v1.8a2.2 2.2 0 1 0 2.2-2.2H15z" />
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24">
+      <rect x="4.75" y="10.2" width="14.5" height="10.3" rx="2" />
+      <path d="M8.1 10.2V7.7a3.9 3.9 0 0 1 7.8 0v2.5" />
+    </symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24">
+      <path d="M12 3.5c.65 4.4 2.1 5.85 6.5 6.5-4.4.65-5.85 2.1-6.5 6.5-.65-4.4-2.1-5.85-6.5-6.5 4.4-.65 5.85-2.1 6.5-6.5Z" />
+      <path d="M18.1 16.2c.24 1.6.78 2.14 2.4 2.4-1.62.25-2.16.8-2.4 2.4-.25-1.6-.8-2.15-2.4-2.4 1.6-.26 2.15-.8 2.4-2.4Z" />
+    </symbol>
+  </svg>
+
+  <div class="desktop-stage">
+    <div class="app-window" id="appWindow">
+      <header class="titlebar">
+        <div class="traffic-lights" aria-hidden="true">
+          <span class="traffic-light traffic-close"></span>
+          <span class="traffic-light traffic-minimize"></span>
+          <span class="traffic-light traffic-zoom"></span>
+        </div>
+
+        <div class="titlebar-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg class="icon brand-icon"><use href="#i-notes"></use></svg>
+          </span>
+          <span class="brand-name">Notes</span>
+        </div>
+
+        <div class="titlebar-actions">
+          <button class="titlebar-button" id="themeToggleBtn" type="button" aria-label="Toggle dark mode" title="Toggle appearance">
+            <svg class="icon icon-sun"><use href="#i-sun"></use></svg>
+            <svg class="icon icon-moon"><use href="#i-moon"></use></svg>
+          </button>
+          <button class="titlebar-button" id="titlebarInstallBtn" type="button" aria-label="Install Notes" title="Install Notes" hidden>
+            <svg class="icon"><use href="#i-download"></use></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="app-body" id="appBody">
+        <aside class="sidebar" id="sidebar" aria-label="Folders">
+          <div class="sidebar-scroll">
+            <div class="account-row">
+              <span class="account-icon">
+                <svg class="icon"><use href="#i-monitor"></use></svg>
+              </span>
+              <div class="account-copy">
+                <strong>On My Device</strong>
+                <span>Saved in this browser</span>
+              </div>
+              <span class="account-dot" title="All changes saved locally"></span>
+            </div>
+
+            <nav class="folder-nav" aria-label="Notes folders">
+              <button class="folder-row folder-row-smart is-active" type="button" data-smart-folder="all" id="allNotesRow">
+                <span class="folder-glyph smart-glyph">
+                  <svg class="icon"><use href="#i-note"></use></svg>
+                </span>
+                <span class="folder-name">All Notes</span>
+                <span class="folder-count" id="allNotesCount">0</span>
+              </button>
+
+              <div class="sidebar-group-heading">
+                <span>Folders</span>
+                <button class="sidebar-mini-button" type="button" id="newFolderBtn" aria-label="New Folder" title="New Folder (Ctrl+Shift+N)">
+                  <svg class="icon"><use href="#i-plus"></use></svg>
+                </button>
+              </div>
+
+              <div class="folder-list" id="folderList"></div>
+
+              <div class="sidebar-divider"></div>
+
+              <button class="folder-row folder-row-smart" type="button" data-smart-folder="trash" id="trashRow">
+                <span class="folder-glyph trash-glyph">
+                  <svg class="icon"><use href="#i-trash"></use></svg>
+                </span>
+                <span class="folder-name">Recently Deleted</span>
+                <span class="folder-count" id="trashCount">0</span>
+              </button>
+            </nav>
+          </div>
+
+          <div class="sidebar-footer">
+            <button class="install-card" id="installCard" type="button" hidden>
+              <span class="install-card-icon">
+                <svg class="icon"><use href="#i-download"></use></svg>
+              </span>
+              <span class="install-card-copy">
+                <strong>Install Notes</strong>
+                <span>Works offline, right on your PC</span>
+              </span>
+              <svg class="icon install-chevron"><use href="#i-chevron-right"></use></svg>
+            </button>
+
+            <div class="sidebar-footer-row">
+              <button class="sidebar-tool" id="appearanceBtn" type="button" aria-label="Appearance" title="Appearance">
+                <svg class="icon icon-sun"><use href="#i-sun"></use></svg>
+                <svg class="icon icon-moon"><use href="#i-moon"></use></svg>
+                <span>Appearance</span>
+              </button>
+              <button class="sidebar-tool sidebar-tool-compact" id="shortcutsBtn" type="button" aria-label="Keyboard shortcuts" title="Keyboard shortcuts">
+                <svg class="icon"><use href="#i-keyboard"></use></svg>
+              </button>
+              <button class="sidebar-tool sidebar-tool-compact" id="aboutBtn" type="button" aria-label="About Notes" title="About Notes">
+                <svg class="icon"><use href="#i-info"></use></svg>
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+        <section class="notes-panel" id="notesPanel" aria-label="Notes list">
+          <header class="notes-header">
+            <div class="notes-title-row">
+              <button class="icon-button sidebar-toggle" id="sidebarToggleBtn" type="button" aria-label="Toggle sidebar" title="Toggle sidebar">
+                <svg class="icon"><use href="#i-sidebar"></use></svg>
+              </button>
+              <div class="notes-title-copy">
+                <div class="notes-title-line">
+                  <h1 id="notesPanelTitle">All Notes</h1>
+                  <span class="notes-title-count" id="notesPanelCount"></span>
+                </div>
+                <span class="notes-panel-subtitle" id="notesPanelSubtitle">On this device</span>
+              </div>
+              <div class="notes-header-actions">
+                <button class="icon-button" id="viewOptionsBtn" type="button" aria-label="View options" title="View options">
+                  <svg class="icon"><use href="#i-ellipsis"></use></svg>
+                </button>
+                <button class="new-note-button" id="newNoteBtn" type="button" aria-label="New note" title="New Note (Ctrl+N)">
+                  <svg class="icon"><use href="#i-compose"></use></svg>
+                </button>
+              </div>
+            </div>
+
+            <label class="search-field" for="searchInput">
+              <svg class="icon search-icon"><use href="#i-search"></use></svg>
+              <input id="searchInput" type="search" autocomplete="off" spellcheck="false" placeholder="Search all notes" aria-label="Search all notes">
+              <button class="search-clear" id="searchClearBtn" type="button" aria-label="Clear search" hidden>
+                <svg class="icon"><use href="#i-x"></use></svg>
+              </button>
+              <span class="search-shortcut" aria-hidden="true">Ctrl K</span>
+            </label>
+          </header>
+
+          <div class="notes-scroll" id="notesScroll">
+            <div class="notes-list" id="notesList" role="listbox" aria-label="Notes"></div>
+          </div>
+
+          <footer class="notes-footer">
+            <span id="notesFooterCount">0 notes</span>
+            <span class="notes-footer-local">
+              <svg class="icon"><use href="#i-cloud"></use></svg>
+              Saved locally
+            </span>
+          </footer>
+        </section>
+
+        <main class="editor-pane" id="editorPane">
+          <section class="editor-empty" id="emptyEditor" aria-label="No note selected">
+            <div class="empty-art" aria-hidden="true">
+              <span class="empty-sheet empty-sheet-back"></span>
+              <span class="empty-sheet empty-sheet-front">
+                <span class="empty-sheet-bar"></span>
+                <span class="empty-sheet-line line-one"></span>
+                <span class="empty-sheet-line line-two"></span>
+                <span class="empty-sheet-line line-three"></span>
+                <span class="empty-sheet-dot"></span>
+              </span>
+            </div>
+            <h2>No note selected</h2>
+            <p>Choose a note from the list, or start with a blank page.</p>
+            <button class="button button-primary" id="emptyNewNoteBtn" type="button">
+              <svg class="icon"><use href="#i-plus"></use></svg>
+              New Note
+            </button>
+            <span class="empty-hint">Everything stays on this PC · <kbd>Ctrl</kbd> <kbd>N</kbd></span>
+          </section>
+
+          <section class="note-editor" id="noteEditor" aria-label="Note editor" hidden>
+            <div class="editor-toolbar" role="toolbar" aria-label="Formatting">
+              <div class="editor-toolbar-left">
+                <button class="icon-button back-to-list" id="backToListBtn" type="button" aria-label="Back to notes" title="Back to notes">
+                  <svg class="icon"><use href="#i-chevron-left"></use></svg>
+                </button>
+                <button class="tool-button format-trigger" id="formatBtn" type="button" aria-label="Text formatting" aria-haspopup="dialog" aria-expanded="false" title="Format">
+                  <span class="format-aa">Aa</span>
+                  <svg class="icon format-caret"><use href="#i-chevron-down"></use></svg>
+                </button>
+                <span class="toolbar-divider"></span>
+                <button class="tool-button" id="boldBtn" type="button" aria-label="Bold" aria-pressed="false" title="Bold (Ctrl+B)">
+                  <svg class="icon"><use href="#i-bold"></use></svg>
+                </button>
+                <button class="tool-button" id="italicBtn" type="button" aria-label="Italic" aria-pressed="false" title="Italic (Ctrl+I)">
+                  <svg class="icon"><use href="#i-italic"></use></svg>
+                </button>
+                <button class="tool-button" id="underlineBtn" type="button" aria-label="Underline" aria-pressed="false" title="Underline (Ctrl+U)">
+                  <svg class="icon"><use href="#i-underline"></use></svg>
+                </button>
+                <button class="tool-button" id="strikeBtn" type="button" aria-label="Strikethrough" aria-pressed="false" title="Strikethrough (Ctrl+Shift+X)">
+                  <svg class="icon"><use href="#i-strike"></use></svg>
+                </button>
+                <span class="toolbar-divider toolbar-divider-secondary"></span>
+                <button class="tool-button" id="checklistBtn" type="button" aria-label="Checklist" aria-pressed="false" title="Checklist (Ctrl+Shift+L)">
+                  <svg class="icon"><use href="#i-checklist"></use></svg>
+                </button>
+                <button class="tool-button" id="bulletsBtn" type="button" aria-label="Bulleted list" aria-pressed="false" title="Bulleted List">
+                  <svg class="icon"><use href="#i-list-bullet"></use></svg>
+                </button>
+                <button class="tool-button" id="numbersBtn" type="button" aria-label="Numbered list" aria-pressed="false" title="Numbered List">
+                  <svg class="icon"><use href="#i-list-number"></use></svg>
+                </button>
+                <button class="tool-button" id="dashBtn" type="button" aria-label="Dashed list" aria-pressed="false" title="Dashed List">
+                  <svg class="icon"><use href="#i-list-dash"></use></svg>
+                </button>
+              </div>
+
+              <div class="editor-toolbar-right">
+                <button class="tool-button" id="pinNoteBtn" type="button" aria-label="Pin note" aria-pressed="false" title="Pin Note">
+                  <svg class="icon pin-outline"><use href="#i-pin"></use></svg>
+                  <svg class="icon pin-filled"><use href="#i-pin-filled"></use></svg>
+                </button>
+                <button class="tool-button toolbar-action-wide" id="moveNoteBtn" type="button" aria-label="Move note" title="Move Note">
+                  <svg class="icon"><use href="#i-move"></use></svg>
+                </button>
+                <button class="tool-button" id="shareNoteBtn" type="button" aria-label="Share note" title="Share Note">
+                  <svg class="icon"><use href="#i-share"></use></svg>
+                </button>
+                <button class="tool-button" id="noteMoreBtn" type="button" aria-label="More note actions" title="More">
+                  <svg class="icon"><use href="#i-ellipsis"></use></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="format-popover" id="formatPopover" role="dialog" aria-label="Formatting options" hidden>
+              <div class="format-styles" role="group" aria-label="Paragraph style">
+                <button class="style-option" type="button" data-block-style="h1">
+                  <span class="style-preview style-preview-title">Title</span>
+                  <svg class="icon style-check"><use href="#i-check"></use></svg>
+                </button>
+                <button class="style-option" type="button" data-block-style="h2">
+                  <span class="style-preview style-preview-heading">Heading</span>
+                  <svg class="icon style-check"><use href="#i-check"></use></svg>
+                </button>
+                <button class="style-option" type="button" data-block-style="h3">
+                  <span class="style-preview style-preview-subheading">Subheading</span>
+                  <svg class="icon style-check"><use href="#i-check"></use></svg>
+                </button>
+                <button class="style-option" type="button" data-block-style="p">
+                  <span class="style-preview style-preview-body">Body</span>
+                  <svg class="icon style-check"><use href="#i-check"></use></svg>
+                </button>
+                <button class="style-option" type="button" data-block-style="pre">
+                  <span class="style-preview style-preview-mono">Monospaced</span>
+                  <svg class="icon style-check"><use href="#i-check"></use></svg>
+                </button>
+              </div>
+              <div class="format-popover-divider"></div>
+              <div class="format-quick-row" role="group" aria-label="Inline formatting">
+                <button class="format-quick" id="popoverBoldBtn" type="button" aria-label="Bold" aria-pressed="false">
+                  <svg class="icon"><use href="#i-bold"></use></svg>
+                </button>
+                <button class="format-quick" id="popoverItalicBtn" type="button" aria-label="Italic" aria-pressed="false">
+                  <svg class="icon"><use href="#i-italic"></use></svg>
+                </button>
+                <button class="format-quick" id="popoverUnderlineBtn" type="button" aria-label="Underline" aria-pressed="false">
+                  <svg class="icon"><use href="#i-underline"></use></svg>
+                </button>
+                <button class="format-quick" id="popoverStrikeBtn" type="button" aria-label="Strikethrough" aria-pressed="false">
+                  <svg class="icon"><use href="#i-strike"></use></svg>
+                </button>
+              </div>
+              <div class="format-popover-divider"></div>
+              <div class="format-list-row" role="group" aria-label="Lists">
+                <button class="format-list-button" id="popoverChecklistBtn" type="button">
+                  <svg class="icon"><use href="#i-checklist"></use></svg>
+                  <span>Checklist</span>
+                </button>
+                <button class="format-list-button" id="popoverBulletsBtn" type="button">
+                  <svg class="icon"><use href="#i-list-bullet"></use></svg>
+                  <span>Bulleted</span>
+                </button>
+                <button class="format-list-button" id="popoverNumbersBtn" type="button">
+                  <svg class="icon"><use href="#i-list-number"></use></svg>
+                  <span>Numbered</span>
+                </button>
+                <button class="format-list-button" id="popoverDashBtn" type="button">
+                  <svg class="icon"><use href="#i-list-dash"></use></svg>
+                  <span>Dashed</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="editor-scroll" id="editorScroll">
+              <div class="trash-banner" id="trashBanner" hidden>
+                <div class="trash-banner-copy">
+                  <svg class="icon"><use href="#i-trash"></use></svg>
+                  <span>This note is in Recently Deleted. Restore it to continue editing.</span>
+                </div>
+                <div class="trash-banner-actions">
+                  <button class="button button-small" id="restoreNoteBtn" type="button">
+                    <svg class="icon"><use href="#i-restore"></use></svg>
+                    Restore
+                  </button>
+                  <button class="button button-small button-danger-ghost" id="deleteForeverBtn" type="button">Delete Forever</button>
+                </div>
+              </div>
+
+              <div class="note-document" id="noteDocument">
+                <div class="note-document-meta" id="noteDocumentMeta"></div>
+                <article class="note-content" id="noteContent" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note content" spellcheck="true"></article>
+              </div>
+              <div class="editor-bottom-space" aria-hidden="true"></div>
+            </div>
+
+            <footer class="editor-footer">
+              <div class="save-indicator" id="saveIndicator">
+                <span class="save-dot"></span>
+                <span id="saveStatus">Saved</span>
+              </div>
+              <div class="note-stats" aria-live="polite">
+                <span id="wordCount">0 words</span>
+                <span class="stat-dot">·</span>
+                <span id="charCount">0 characters</span>
+                <span class="stat-dot">·</span>
+                <span id="modifiedLabel">Edited just now</span>
+              </div>
+            </footer>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <div class="context-menu" id="contextMenu" role="menu" tabindex="-1" hidden></div>
+
+  <dialog class="app-dialog" id="appDialog" aria-labelledby="appDialogTitle">
+    <form class="dialog-form" id="appDialogForm" novalidate>
+      <div class="dialog-heading">
+        <div class="dialog-icon" id="appDialogIcon" aria-hidden="true">
+          <svg class="icon"><use href="#i-folder-fill"></use></svg>
+        </div>
+        <h2 id="appDialogTitle">New Folder</h2>
+        <p id="appDialogDescription"></p>
+      </div>
+      <div class="dialog-body" id="appDialogBody"></div>
+      <div class="dialog-actions">
+        <button class="button dialog-cancel" id="appDialogCancel" type="button">Cancel</button>
+        <button class="button button-primary" id="appDialogConfirm" type="button">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <aside class="install-banner" id="installBanner" role="dialog" aria-label="Install Notes" hidden>
+    <div class="install-banner-icon">
+      <svg class="icon"><use href="#i-notes"></use></svg>
+    </div>
+    <div class="install-banner-copy">
+      <strong>Install Notes on your PC</strong>
+      <span>Open it from the Start menu and keep writing offline.</span>
+    </div>
+    <button class="button button-primary button-small" id="installBannerBtn" type="button">Install</button>
+    <button class="install-banner-close" id="dismissInstallBtn" type="button" aria-label="Dismiss install banner">
+      <svg class="icon"><use href="#i-x"></use></svg>
+    </button>
+  </aside>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <noscript>
+    <div class="noscript-message">Notes needs JavaScript enabled to save and edit your notes.</div>
+  </noscript>
+</body>
+</html>

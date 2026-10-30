@@ -1,0 +1,23 @@
+{
+  "name": "notes-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local-first, Apple Notes-inspired notebook PWA with rich text, checklists, folders, and offline support.",
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./assets/styles.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./assets/styles.css --watch",
+    "serve": "node scripts/serve.mjs",
+    "test": "node scripts/integration.mjs",
+    "shots": "node scripts/visual-check.mjs",
+    "icons": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/generate-icons.ps1"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "playwright-core": "^1.64.1",
+    "tailwindcss": "^4.3.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
